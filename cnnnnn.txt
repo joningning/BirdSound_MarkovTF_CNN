@@ -1,0 +1,62 @@
+import os
+import pathlib
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Rescaling
+
+data_dir = "./dataset/mtf_data_set"
+img_width, img_height = 1000, 400
+batch_size = 75
+
+train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    data_dir,
+    labels='inferred',
+    label_mode='int',
+    batch_size=batch_size,
+    image_size=(img_height, img_width),
+    color_mode='rgb',
+    shuffle=True,
+    validation_split=0.2,
+    subset='training',
+    seed=100,
+)
+
+val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    data_dir,
+    labels='inferred',
+    label_mode='int',
+    batch_size=batch_size,
+    image_size=(img_height, img_width),
+    color_mode='rgb',
+    shuffle=True,
+    validation_split=0.2,
+    subset='validation',
+    seed=100,
+)
+
+model = Sequential([
+    Rescaling(1./255, input_shape=(img_height, img_width, 3)),
+    Conv2D(32, (3, 3), activation='relu'),
+    Conv2D(32, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    
+    Conv2D(64, (3, 3), activation='relu'),
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    
+    Conv2D(128, (3, 3), activation='relu'),
+    Conv2D(128, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    
+    Flatten(),
+    Dense(128, activation='relu'),
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(train_ds, epochs=10, validation_data=val_ds)
+
+test_loss, test_accuracy = model.evaluate(val_ds)
+print("Test accuracy:", test_accuracy)
